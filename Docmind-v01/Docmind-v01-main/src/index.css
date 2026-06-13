@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* IntelliDocs Design System - Professional Enterprise Theme */
+@layer base {
+  :root {
+    /* Core Background & Text */
+    --background: 210 20% 98%;
+    --foreground: 215 25% 27%;
+
+    /* Card System */
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+
+    /* Interactive Elements */
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+
+    /* Brand Purple Theme */
+    --primary: 253 82% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 253 82% 45%;
+    --primary-light: 253 82% 93%;
+    
+    /* Professional Secondary */
+    --secondary: 215 20% 95%;
+    --secondary-foreground: 215 25% 27%;
+    --secondary-hover: 215 20% 90%;
+
+    /* Subtle Muted Tones */
+    --muted: 215 20% 95%;
+    --muted-foreground: 215 15% 57%;
+
+    /* Accent for Success/Info */
+    --accent: 157 56% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Enterprise Status Colors */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 215 15% 87%;
+    --input: 215 15% 87%;
+    --ring: 217 91% 60%;
+
+    /* Menthol Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(253 82% 53%), hsl(259 95% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(253 20% 98%), hsl(253 20% 94%));
+    --gradient-hero: linear-gradient(135deg, hsl(253 82% 53%) 0%, hsl(259 95% 60%) 50%, hsl(266 86% 65%) 100%);
+    
+    /* Professional Shadows */
+    --shadow-card: 0 4px 12px hsl(215 25% 27% / 0.08);
+    --shadow-elevated: 0 8px 24px hsl(215 25% 27% / 0.12);
+    --shadow-floating: 0 12px 40px hsl(215 25% 27% / 0.15);
+
+    /* Enterprise Spacing */
+    --radius: 0.75rem;
+
+    /* Sidebar Colors */
+    --sidebar-background: 0 0% 100%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark mode for enterprise applications */
+    --background: 215 28% 17%;
+    --foreground: 210 20% 98%;
+    --card: 215 28% 17%;
+    --card-foreground: 210 20% 98%;
+    --popover: 215 28% 17%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 253 82% 57%;
+    --primary-foreground: 215 28% 17%;
+    --secondary: 215 25% 22%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 25% 22%;
+    --muted-foreground: 215 15% 70%;
+    --accent: 157 56% 55%;
+    --accent-foreground: 215 28% 17%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 20% 27%;
+    --input: 215 20% 27%;
+    --ring: 217 91% 60%;
+    --sidebar-background: 215 30% 15%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 215 28% 17%;
+    --sidebar-accent: 215 25% 22%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 215 20% 27%;
+    --sidebar-ring: 217 91% 60%;
+  }
+}
+
+@layer components {
+  /* Enterprise Component Styles */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  .shadow-floating {
+    box-shadow: var(--shadow-floating);
+  }
+  
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}

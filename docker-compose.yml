@@ -1,0 +1,598 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - docnet
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    command: mongod --noauth
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ping:1})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - docnet
+
+  keycloak-postgres:
+    image: postgres:16-alpine
+    container_name: keycloak-postgres
+    restart: unless-stopped
+    profiles:
+      - external-auth
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak_dev_password
+    volumes:
+      - keycloak_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - docnet
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: keycloak
+    restart: unless-stopped
+    profiles:
+      - external-auth
+    command: start-dev --http-port=8080 --health-enabled=true
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-postgres
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak_dev_password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin_dev_password
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8081:8080"
+    depends_on:
+      keycloak-postgres:
+        condition: service_healthy
+    networks:
+      - docnet
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - docnet
+
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    container_name: elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - docnet
+
+  # ============================================================
+  # QDRANT VECTOR STORE (for metadata similarity)
+  # ============================================================
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - docnet
+
+  # ============================================================
+  # OCR SERVICES
+  # ============================================================
+  ocr-service-1:
+    image: soundous-ocr-service:latest
+    build:
+      context: ./ocr_microservice9/ocr_service
+      dockerfile: Dockerfile
+    container_name: ocr-service-1
+    restart: unless-stopped
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      MONGO_URI: mongodb://mongodb:27017/ocr_db
+      MONGODB_URI: mongodb://mongodb:27017/
+      MONGODB_DB: ocr_db
+      MONGODB_COLLECTION: documents
+      OCR_GPU: "true"
+      INSTANCE_ID: "ocr-1"
+      OCR_MODEL_DIR: "/app/arabic_rec"
+      CPU_THREADS: "2"
+      ENABLE_MKLDNN: "true"
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    volumes:
+      - /tmp:/tmp
+      - ./ocr_microservice9/ocr_service/arabic_rec:/app/arabic_rec
+      - paddleocr_cache:/root/.paddleocr
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+    networks:
+      - docnet
+
+  ocr-service-2:
+    image: soundous-ocr-service:latest
+    build:
+      context: ./ocr_microservice9/ocr_service
+      dockerfile: Dockerfile
+    container_name: ocr-service-2
+    restart: unless-stopped
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      MONGO_URI: mongodb://mongodb:27017/ocr_db
+      MONGODB_URI: mongodb://mongodb:27017/
+      MONGODB_DB: ocr_db
+      MONGODB_COLLECTION: documents
+      OCR_GPU: "true"
+      INSTANCE_ID: "ocr-2"
+      OCR_MODEL_DIR: "/app/arabic_rec"
+      CPU_THREADS: "2"
+      ENABLE_MKLDNN: "true"
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    volumes:
+      - /tmp:/tmp
+      - ./ocr_microservice9/ocr_service/arabic_rec:/app/arabic_rec
+      - paddleocr_cache:/root/.paddleocr
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+    networks:
+      - docnet
+
+  ocr-service-3:
+    image: soundous-ocr-service:latest
+    build:
+      context: ./ocr_microservice9/ocr_service
+      dockerfile: Dockerfile
+    container_name: ocr-service-3
+    restart: unless-stopped
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      MONGO_URI: mongodb://mongodb:27017/ocr_db
+      MONGODB_URI: mongodb://mongodb:27017/
+      MONGODB_DB: ocr_db
+      MONGODB_COLLECTION: documents
+      OCR_GPU: "true"
+      INSTANCE_ID: "ocr-3"
+      OCR_MODEL_DIR: "/app/arabic_rec"
+      CPU_THREADS: "2"
+      ENABLE_MKLDNN: "true"
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    volumes:
+      - /tmp:/tmp
+      - ./ocr_microservice9/ocr_service/arabic_rec:/app/arabic_rec
+      - paddleocr_cache:/root/.paddleocr
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+    networks:
+      - docnet
+
+  # ============================================================
+  # CLASSIFIER SERVICES
+  # ============================================================
+  classifier-service-1:
+    image: soundous-classifier-service:latest
+    build:
+      context: ./categoryclass/classifier-service
+      dockerfile: Dockerfile
+    container_name: classifier-service-1
+    restart: unless-stopped
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      GATEWAY_URL: http://api-gateway:8001
+      MONGO_URI: mongodb://mongodb:27017/classifier_db
+      DEVICE: "cuda"
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      INSTANCE_ID: "classifier-1"
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    gpus: all
+    networks:
+      - docnet
+
+  classifier-service-2:
+    image: soundous-classifier-service:latest
+    build:
+      context: ./categoryclass/classifier-service
+      dockerfile: Dockerfile
+    container_name: classifier-service-2
+    restart: unless-stopped
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      GATEWAY_URL: http://api-gateway:8001
+      MONGO_URI: mongodb://mongodb:27017/classifier_db
+      DEVICE: "cuda"
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      INSTANCE_ID: "classifier-2"
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    gpus: all
+    networks:
+      - docnet
+
+  # ============================================================
+  # METADATA SERVICES (only one instance)
+  # ============================================================
+  metadata-service-1:
+    build:
+      context: ./metadata_service
+      dockerfile: Dockerfile
+    container_name: metadata-service-1
+    restart: unless-stopped
+    ports:
+      - "8004:8004"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      MONGO_URI: mongodb://mongodb:27017/metadata_db
+      GLINER_MODEL: "urchade/gliner_multi-v2.1"
+      DEVICE: "cpu"
+      INSTANCE_ID: "metadata-1"
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      QDRANT_COLLECTION: document_metadata
+      VECTOR_SIZE: "384"
+      GATEWAY_URL: "http://api-gateway:8001" 
+      SEARCH_SERVICE_URL: "http://semantic-search-service-1:8003"
+    volumes:
+    - ~/.cache/huggingface:/root/.cache/huggingface 
+    mem_limit: 6g
+    mem_reservation: 4g
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      qdrant:
+        condition: service_started
+    networks:
+      - docnet
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health', timeout=5).read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 900s
+
+  # ============================================================
+  # SEMANTIC SEARCH SERVICES
+  # ============================================================
+  semantic-search-service-1:
+    image: soundous-semantic-search-service:latest
+    build:
+      context: ./semantic_search_microservice
+      dockerfile: Dockerfile
+    container_name: semantic-search-service-1
+    restart: unless-stopped
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      ELASTICSEARCH_HOST: http://elasticsearch:9200
+      INSTANCE_ID: "search-1"
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - docnet
+
+  semantic-search-service-2:
+    image: soundous-semantic-search-service:latest
+    build:
+      context: ./semantic_search_microservice
+      dockerfile: Dockerfile
+    container_name: semantic-search-service-2
+    restart: unless-stopped
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      ELASTICSEARCH_HOST: http://elasticsearch:9200
+      INSTANCE_ID: "search-2"
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - docnet
+
+  # ============================================================
+  # ARCHIVE SERVICE
+  # ============================================================
+  archive-service:
+    build:
+      context: ./archive-service
+      dockerfile: Dockerfile
+    container_name: archive-service
+    restart: unless-stopped
+    ports:
+      - "3007:3007"
+    env_file:
+      - ./archive-service/.env
+    environment:
+      # Keep these Docker-network values above the archive-service/.env localhost values.
+      MONGODB_URI: mongodb://mongodb:27017/archive_db
+      MONGO_URI: mongodb://mongodb:27017/archive_db
+      PORT: 3007
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      GATEWAY_URL: http://api-gateway:8001
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+      ARCHIVE_STORAGE_DRIVER: mc
+      MC_ALIAS: docmind
+      MC_ENDPOINT: http://docmind-archive.duckdns.org:9010
+      MINIO_HOT_BUCKET: docmind-archive
+      MINIO_COLD_BUCKET: docmind-archive
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      minio:
+        condition: service_started
+    networks:
+      - docnet
+
+  # ============================================================
+  # OPTIONAL EXTERNAL AUTH SERVICE (Keycloak adapter)
+  # Start with: docker compose --profile external-auth up -d keycloak external-auth-service
+  # Switch the gateway with docker-compose.external-auth.yml when you are ready.
+  # ============================================================
+  external-auth-service:
+    build:
+      context: ./external-auth-service
+      dockerfile: Dockerfile
+    container_name: external-auth-service
+    restart: unless-stopped
+    profiles:
+      - external-auth
+    ports:
+      - "3010:3010"
+    environment:
+      PORT: 3010
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: docmind
+      KEYCLOAK_CLIENT_ID: docmind-api
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin_dev_password
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+      DOCMIND_TOKEN_TTL: 12h
+      DEFAULT_ENTERPRISE_ID: ENT_DEFAULT
+      APP_BASE_URL: http://localhost:8080
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 465
+      SMTP_USER: docmind2026@gmail.com
+      SMTP_PASS: ${DOCMIND_SMTP_PASS:-}
+      EMAIL_FROM: docmind2026@gmail.com
+    depends_on:
+      keycloak:
+        condition: service_started
+    networks:
+      - docnet
+
+  # ============================================================
+  # DOCUMENT SERVICE
+  # ============================================================
+  document-service:
+    build:
+      context: ./document-service
+      dockerfile: Dockerfile
+    container_name: document-service
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongodb:27017/documents_service_db
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672
+      RABBITMQ_QUEUE: document_queue
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: password
+      MINIO_BUCKET: documents
+      OCR_SERVICE_URL: http://api-gateway:8001/api/ocr
+      CLASSIFIER_SERVICE_URL: http://api-gateway:8001/api/classify
+      SEARCH_SERVICE_URL: http://api-gateway:8001/api/search
+      ARCHIVE_SERVICE_URL: http://archive-service:3007
+      AUTH_SERVICE_URL: http://host.docker.internal:3001
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+    depends_on:
+      rabbitmq:
+      
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      minio:
+        condition: service_started
+      api-gateway:
+        condition: service_started
+    volumes:
+      - document_uploads:/app/uploads
+    networks:
+      - docnet
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ============================================================
+  # API GATEWAY
+  # ============================================================
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      DEBUG: "false"
+      JWT_SECRET: "docmind-secure-jwt-key-2024"
+      ALGORITHM: "HS256"
+      NODE_AUTH_URL: "http://host.docker.internal:3001"
+      OCR_SERVICE_URLS: '["http://ocr-service-1:8000","http://ocr-service-2:8000","http://ocr-service-3:8000"]'
+      CLASSIFIER_SERVICE_URLS: '["http://classifier-service-1:8002","http://classifier-service-2:8002"]'
+      SEARCH_SERVICE_URLS: '["http://semantic-search-service-1:8003","http://semantic-search-service-2:8003"]'
+      METADATA_SERVICE_URLS: '["http://metadata-service-1:8004"]'   # Only one metadata service
+      ARCHIVE_SERVICE_URLS: '["http://archive-service:3007"]'
+      DOCUMENT_SERVICE_URLS: '["http://document-service:3000"]'
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      ocr-service-1:
+        condition: service_started
+      ocr-service-2:
+        condition: service_started
+      ocr-service-3:
+        condition: service_started
+      classifier-service-1:
+        condition: service_started
+      classifier-service-2:
+        condition: service_started
+      semantic-search-service-1:
+        condition: service_started
+      semantic-search-service-2:
+        condition: service_started
+    networks:
+      - docnet
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+# ============================================================
+# VOLUMES
+# ============================================================
+volumes:
+  rabbitmq_data:
+  mongodb_data:
+  hf_cache:
+  minio_data:
+  elasticsearch_data:
+  document_uploads:
+  qdrant_data:
+  paddleocr_cache:
+  keycloak_postgres_data:
+
+# ============================================================
+# NETWORKS
+# ============================================================
+networks:
+  docnet:
+    driver: bridge

@@ -1,0 +1,33 @@
+@startuml
+title System Context Diagram for Intelligent Document Digitization Platform
+
+left to right direction
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam ArrowColor #7A7A7A
+skinparam ArrowFontColor #5F5F5F
+skinparam TitleFontColor black
+
+skinparam rectangle {
+  RoundCorner 6
+  BorderColor transparent
+  FontColor white
+  FontSize 15
+}
+
+rectangle "«person»\n\nEnterprise User\n\nEmployees who upload,\nsearch, review, and manage\nbusiness documents" as EnterpriseUser #0E4B8F
+
+rectangle "«person»\n\nSystem Administrator\n\nIT staff responsible for platform\nadministration, monitoring,\nconfiguration, and access control" as SysAdmin #0E4B8F
+
+rectangle "«external_system»\n\nClient Systems\n\nEnterprise applications that integrate\nwith the platform through APIs" as ClientSystems #9A9A9A
+
+rectangle "«system»\n\nIntelligent Document Digitization and\nManagement Platform\n\nDigitizes, extracts, classifies,\nindexes, archives, and manages\nenterprise documents" as IDDMP #1565C0
+
+rectangle "«external_system»\n\nExternal Auth Service\n\nExternal identity provider used for\nauthentication and access control\n(optional)" as AuthService #9A9A9A
+
+EnterpriseUser --> IDDMP : Uploads documents,\nsearches content,\nreviews extracted metadata
+SysAdmin --> IDDMP : Configures platform services,\nmonitors processing pipelines
+ClientSystems --> IDDMP : Submits documents and\nretrieves processing results\nthrough the platform API
+IDDMP --> AuthService : Delegates user authentication\nand token validation (optional)
+
+@enduml

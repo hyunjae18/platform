@@ -1,0 +1,134 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Node
+node_modules/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm/
+.nyc_output/
+coverage/
+.bundle/
+.DS_Store
+.env
+.env.*
+
+# Typescript
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python packaging
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter
+.ipynb_checkpoints
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Docker
+docker-compose.override.yml
+docker-compose.*.yml
+*.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Archives
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# OS generated files
+Icon?
+
+# Python virtual envs specific to subprojects
+**/venv/
+**/.venv/
+**/env/
+**/ENV/
+**/env.bak/
+**/venv.bak/
+
+# NestJS / TS build artifacts
+**/dist/
+**/build/
+
+# Python wheel / egg
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+
+# Local environment and secrets
+*.pem
+*.key
+*.crt
+secrets.json
+
+# IDE specific
+/.idea
+*.iml
+
+# Archive service output
+**/coverage/
+
+# Semantic and OCR microservices
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/*.pyd
+**/*.db
+**/*.sqlite
+
+# Misc
+*.log
+*.sqlite3

@@ -1,0 +1,72 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# Dependency folders
+node_modules/
+**/node_modules/
+.venv/
+venv/
+env/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs and local runtime files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# Local tools and generated artifacts
+mc.exe
+*.tmp
+*.temp
+
+# Docker/local volumes and data
+data/
+uploads/
+storage/
+volumes/
+*.db
+*.sqlite
+*.sqlite3
+
+# Large ML model weights and caches
+*.safetensors
+*.ckpt
+*.onnx
+*.pt
+*.pth
+*.gguf
+.cache/
+hf_cache/
+paddleocr_cache/
+
+# IDE/local metadata
+.idea/
+.vscode/
+*.code-workspace
+
+# Local nested repository backups
+.git.local-backup/

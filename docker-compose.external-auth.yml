@@ -1,0 +1,14 @@
+services:
+  api-gateway:
+    environment:
+      NODE_AUTH_URL: "http://external-auth-service:3010"
+    depends_on:
+      external-auth-service:
+        condition: service_started
+
+  document-service:
+    environment:
+      AUTH_SERVICE_URL: "http://external-auth-service:3010"
+    depends_on:
+      external-auth-service:
+        condition: service_started
