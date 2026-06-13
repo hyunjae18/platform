@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Headers, HttpCode, HttpException, HttpStatus, Post } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { KeycloakService, KeycloakUserProfile } from './keycloak.service';
+import { SyncedDocmindUser, UserSyncService } from './user-sync.service';
 
 type RequestedRole = 'admin' | 'member';
 
@@ -26,6 +27,7 @@ export class AuthController {
   constructor(
     private readonly keycloak: KeycloakService,
     private readonly jwt: JwtService,
+    private readonly userSync: UserSyncService,
   ) {}
 
   @Get('/health')
@@ -56,19 +58,24 @@ export class AuthController {
       enterpriseId: body.enterpriseId || process.env.DEFAULT_ENTERPRISE_ID || 'ENT_DEFAULT',
       enabled: !requiresApproval,
     });
+    const syncedUser = await this.userSync.syncUser(user, {
+      status: requiresApproval ? 'invited' : 'active',
+      approvalStatus: requiresApproval ? 'pending' : 'approved',
+      lastLoginAt: requiresApproval ? null : new Date().toISOString(),
+    });
 
     if (requiresApproval) {
       return {
         requiresApproval: true,
         message: 'Admin account request submitted. Enable or promote the user in Keycloak when approved.',
-        user: this.toDocmindUser(user, 'invited', 'pending'),
+        user: this.toDocmindUser(syncedUser),
       };
     }
 
     return {
       requiresApproval: false,
-      token: this.issueDocmindToken(user, role),
-      user: this.toDocmindUser(user),
+      token: this.issueDocmindToken(syncedUser, role),
+      user: this.toDocmindUser(syncedUser),
     };
   }
 
@@ -81,11 +88,16 @@ export class AuthController {
 
     const session = await this.keycloak.login(body.email, body.password);
     const role = session.role === 'admin' ? 'admin' : 'member';
+    const syncedUser = await this.userSync.syncUser(session.user, {
+      status: 'active',
+      approvalStatus: 'approved',
+      lastLoginAt: new Date().toISOString(),
+    });
 
     return {
-      token: this.issueDocmindToken(session.user, role),
+      token: this.issueDocmindToken(syncedUser, role),
       keycloakToken: session.accessToken,
-      user: this.toDocmindUser(session.user),
+      user: this.toDocmindUser(syncedUser),
     };
   }
 
@@ -124,12 +136,13 @@ export class AuthController {
     };
   }
 
-  private issueDocmindToken(user: KeycloakUserProfile, role: 'admin' | 'member') {
+  private issueDocmindToken(user: KeycloakUserProfile | SyncedDocmindUser, role: 'admin' | 'member') {
     return this.jwt.sign({
       sub: user.id,
       role,
       email: user.email,
       enterpriseId: user.enterpriseId,
+      keycloakId: 'keycloakId' in user ? user.keycloakId : user.id,
     });
   }
 
@@ -145,6 +158,7 @@ export class AuthController {
         email: string;
         role: 'admin' | 'member';
         enterpriseId: string;
+        keycloakId?: string;
       };
 
       return {
@@ -157,6 +171,7 @@ export class AuthController {
         approvalStatus: 'approved',
         enterpriseId: payload.enterpriseId,
         lastLoginAt: null,
+        keycloakId: payload.keycloakId || payload.sub,
       };
     } catch {
       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
@@ -164,9 +179,7 @@ export class AuthController {
   }
 
   private toDocmindUser(
-    user: KeycloakUserProfile,
-    status: 'active' | 'invited' | 'disabled' = 'active',
-    approvalStatus: 'approved' | 'pending' | 'rejected' = 'approved',
+    user: KeycloakUserProfile | SyncedDocmindUser,
   ) {
     return {
       id: user.id,
@@ -174,10 +187,11 @@ export class AuthController {
       email: user.email,
       role: user.role,
       requestedRole: user.requestedRole,
-      status,
-      approvalStatus,
+      status: 'status' in user ? user.status : 'active',
+      approvalStatus: 'approvalStatus' in user ? user.approvalStatus : 'approved',
       enterpriseId: user.enterpriseId,
-      lastLoginAt: null,
+      lastLoginAt: 'lastLoginAt' in user ? user.lastLoginAt : null,
+      keycloakId: 'keycloakId' in user ? user.keycloakId : user.id,
     };
   }
 }

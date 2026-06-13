@@ -453,7 +453,7 @@ services:
   # ============================================================
   # OPTIONAL EXTERNAL AUTH SERVICE (Keycloak adapter)
   # Start with: docker compose --profile external-auth up -d keycloak external-auth-service
-  # Switch the gateway with docker-compose.external-auth.yml when you are ready.
+  # Switch the gateway with docker-compose.external-auth.yml when ready.
   # ============================================================
   external-auth-service:
     build:
@@ -472,6 +472,7 @@ services:
       KEYCLOAK_CLIENT_ID: docmind-api
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin_dev_password
+      MONGODB_URI: mongodb://mongodb:27017/docmind_identity
       JWT_SECRET: "docmind-secure-jwt-key-2024"
       DOCMIND_TOKEN_TTL: 12h
       DEFAULT_ENTERPRISE_ID: ENT_DEFAULT
@@ -482,6 +483,8 @@ services:
       SMTP_PASS: ${DOCMIND_SMTP_PASS:-}
       EMAIL_FROM: docmind2026@gmail.com
     depends_on:
+      mongodb:
+        condition: service_started
       keycloak:
         condition: service_started
     networks:

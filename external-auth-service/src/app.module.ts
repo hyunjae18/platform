@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
+import { UserSyncService } from './user-sync.service';
 import { KeycloakService } from './keycloak.service';
 
 @Module({
@@ -13,6 +14,6 @@ import { KeycloakService } from './keycloak.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [KeycloakService],
+  providers: [KeycloakService, UserSyncService],
 })
 export class AppModule {}

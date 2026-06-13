@@ -1,4 +1,4 @@
-﻿import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -27,7 +27,7 @@ const plans = [
       "5GB cloud storage",
       "Email support",
       "Standard templates",
-      "Mobile app access"
+      // "Mobile app access"
     ],
     limitations: [
       "No advanced AI features",
@@ -82,7 +82,7 @@ const plans = [
 
 const paymentMethods = [
   {
-    name: "TPE (Terminal de Paiement Ã‰lectronique)",
+    name: "TPE (Terminal de Paiement Électronique)",
     description: "Electronic payment terminal - widely accepted across Algeria",
     icon: CreditCard,
     availability: "Available at all major banks and retailers"
@@ -102,7 +102,7 @@ const PricingSection = () => {
         {/* Header */}
         <div className="text-center space-y-4 mb-16">
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-success/10 text-success text-sm font-medium">
-            ðŸ’° Transparent Pricing
+             Transparent Pricing
           </div>
           <h2 className="text-3xl lg:text-5xl font-bold tracking-tight">
             Choose the perfect plan
@@ -243,25 +243,28 @@ const PricingSection = () => {
               <CardContent className="p-6">
                 <h4 className="font-semibold mb-2">Can I change plans anytime?</h4>
                 <p className="text-muted-foreground text-sm">
-                  Plans can be adjusted by the admin team. Billing automation is still being finalized for this version.
+                  Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, 
+                  and we'll prorate the billing accordingly.
                 </p>
               </CardContent>
             </Card>
             
             <Card className="shadow-card">
               <CardContent className="p-6">
-                <h4 className="font-semibold mb-2">What should I test first?</h4>
+                <h4 className="font-semibold mb-2">Is there a setup fee?</h4>
                 <p className="text-muted-foreground text-sm">
-                  Start with PDF, image, WebP, and certificate samples. Check OCR text, metadata, archive download, and search results.
+                  No setup fees for Starter and Professional plans. Enterprise plans may include 
+                  one-time setup and onboarding fees depending on customization requirements.
                 </p>
               </CardContent>
             </Card>
             
             <Card className="shadow-card">
               <CardContent className="p-6">
-                <h4 className="font-semibold mb-2">How does support work right now?</h4>
+                <h4 className="font-semibold mb-2">What payment methods do you accept?</h4>
                 <p className="text-muted-foreground text-sm">
-                  Support requests are sent by email and saved in the admin inbox. Replies are manual for now.
+                  We accept TPE (Terminal de Paiement Électronique) and ECCP payments, 
+                  ensuring convenient and secure transactions for our Algerian customers.
                 </p>
               </CardContent>
             </Card>
@@ -274,7 +277,7 @@ const PricingSection = () => {
             <CardContent className="p-8">
               <h3 className="text-2xl font-bold mb-4">Ready to Get Started?</h3>
               <p className="text-muted-foreground mb-6">
-                Start small, test real documents, and scale when the workflow is stable.
+                Join thousands of businesses already saving time and money with DocMind
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/signup">

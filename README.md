@@ -178,6 +178,8 @@ external-auth-service/
 
 It keeps the same DocMind auth routes, authenticates users through Keycloak, then issues a DocMind-compatible JWT for the existing gateway.
 
+The adapter also mirrors Keycloak user profiles into MongoDB `docmind_identity.users` on register/login. Passwords stay in Keycloak; MongoDB only stores readable platform metadata such as role, status, approval state, enterprise id, and `keycloakId`.
+
 Start only Keycloak and the adapter:
 
 ```powershell

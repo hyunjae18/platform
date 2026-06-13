@@ -12,6 +12,15 @@ It keeps the DocMind API contract stable:
 
 Keycloak stores the users and validates credentials. The adapter then issues a DocMind-compatible HS256 JWT, because the current API gateway already validates tokens with `JWT_SECRET`.
 
+The adapter also syncs a readable user profile into MongoDB:
+
+```text
+mongodb://mongodb:27017/docmind_identity
+collection: users
+```
+
+Keycloak remains the source of truth for passwords. MongoDB stores profile, role, status, approval state, enterprise id, `keycloakId`, and `authProvider=keycloak`.
+
 ## Why It Is Optional
 
 The existing Node identity server still works. This service is behind the Compose profile `external-auth`, so it will not start unless requested.
@@ -53,4 +62,5 @@ Keep the Gmail app password in your local environment as `DOCMIND_SMTP_PASS`; do
 - Admin registration requests are created as disabled Keycloak users.
 - A real admin approval flow should later enable the user and assign the `admin` role inside Keycloak.
 - Password reset is delegated to Keycloak email links.
+- User profiles are mirrored into MongoDB on register/login so the existing admin dashboard and reporting flows can read users.
 - This is intentionally simple so it can prove the external-auth architecture without disturbing the working platform.
